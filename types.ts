@@ -67,7 +67,10 @@ export interface CommitResponse {
 }
 export interface EventMap {
   "socket.io-request": (
-    data: CommitData | JoinRoomData,
+    data: { method: "commit"; data: CommitData } | {
+      method: "room:join";
+      data: JoinRoomData;
+    },
     callback: (
       response: (CommitResponse | JoinRoomResponse) & { error?: unknown },
     ) => void,
