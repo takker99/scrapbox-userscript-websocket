@@ -64,7 +64,9 @@ export function wrap(
       resolve,
     );
     try {
-      yield await waitForEvent();
+      while (true) {
+        yield await waitForEvent();
+      }
     } finally {
       socket.off(event, resolve);
     }
