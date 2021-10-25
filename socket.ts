@@ -9,10 +9,14 @@ import type {
 } from "./types/socketIO/index.ts";
 export type { Manager, ManagerOptions, Socket, SocketOptions };
 
-declare function io(
-  uri: string,
-  opts?: Partial<ManagerOptions & SocketOptions>,
-): Socket;
+declare global {
+  interface Window {
+    io(
+      uri: string,
+      opts?: Partial<ManagerOptions & SocketOptions>,
+    ): Socket;
+  }
+}
 const version = "4.2.0";
 
 export async function socketIO() {
@@ -23,17 +27,17 @@ export async function socketIO() {
   });
 }
 
-function importSocketIO(): Promise<typeof io> {
+function importSocketIO(): Promise<Window["io"]> {
   const url =
     `https://cdnjs.cloudflare.com/ajax/libs/socket.io/${version}/socket.io.min.js`;
   if (document.querySelector(`script[src="${url}"]`)) {
-    return Promise.resolve(io);
+    return Promise.resolve(window.io);
   }
 
   const script = document.createElement("script");
   script.src = url;
   return new Promise((resolve, reject) => {
-    script.onload = () => resolve(io);
+    script.onload = () => resolve(window.io);
     script.onerror = (e) => reject(e);
     document.head.append(script);
   });
