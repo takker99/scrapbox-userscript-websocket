@@ -6,7 +6,7 @@ import type {
   ManagerOptions,
   Socket,
   SocketOptions,
-} from "https://cdn.esm.sh/v54/socket.io-client@4.2.0/build/index.d.ts";
+} from "./types/socketIO/index.ts";
 export type { Manager, ManagerOptions, Socket, SocketOptions };
 
 declare function io(
