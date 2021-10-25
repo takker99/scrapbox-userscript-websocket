@@ -1,0 +1,40 @@
+/// <reference no-default-lib="true" />
+/// <reference lib="esnext" />
+/// <reference lib="dom" />
+import type {
+  Manager,
+  ManagerOptions,
+  Socket,
+  SocketOptions,
+} from "https://cdn.esm.sh/v54/socket.io-client@4.2.0/build/index.d.ts";
+export type { Manager, ManagerOptions, Socket, SocketOptions };
+
+declare function io(
+  uri: string,
+  opts?: Partial<ManagerOptions & SocketOptions>,
+): Socket;
+const version = "4.2.0";
+
+export async function socketIO() {
+  const io = await importSocketIO();
+  return io("https://scrapbox.io", {
+    reconnectionDelay: 5000,
+    transports: ["websocket"],
+  });
+}
+
+function importSocketIO(): Promise<typeof io> {
+  const url =
+    `https://cdnjs.cloudflare.com/ajax/libs/socket.io/${version}/socket.io.min.js`;
+  if (document.querySelector(`script[src="${url}"]`)) {
+    return Promise.resolve(io);
+  }
+
+  const script = document.createElement("script");
+  script.src = url;
+  return new Promise((resolve, reject) => {
+    script.onload = () => resolve(io);
+    script.onerror = (e) => reject(e);
+    document.head.append(script);
+  });
+}
