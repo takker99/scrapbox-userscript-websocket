@@ -150,5 +150,5 @@ export interface Pin {
   pin: number;
 }
 export interface Delete {
-  delete: true;
+  deleted: true;
 }
