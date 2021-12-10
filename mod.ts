@@ -49,7 +49,7 @@ export function wrap(
   }
 
   async function* response<EventName extends keyof ListenEventMap>(
-    event: EventName,
+    ...events: EventName[]
   ) {
     type Data = Parameters<ListenEventMap[EventName]>[0];
     let _resolve: ((data: Data) => void) | undefined;
@@ -58,17 +58,21 @@ export function wrap(
       _resolve?.(data);
     };
 
-    socket.on(
-      event,
-      // @ts-ignore 何故か型推論に失敗する
-      resolve,
-    );
+    for (const event of events) {
+      socket.on(
+        event,
+        // @ts-ignore 何故か型推論に失敗する
+        resolve,
+      );
+    }
     try {
       while (true) {
         yield await waitForEvent();
       }
     } finally {
-      socket.off(event, resolve);
+      for (const event of events) {
+        socket.off(event, resolve);
+      }
     }
   }
 
