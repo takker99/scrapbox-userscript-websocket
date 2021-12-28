@@ -119,6 +119,7 @@ export type Change =
   | DeleteCommit
   | LinksCommit
   | DescriptionsCommit
+  | ImageCommit
   | TitleCommit;
 export interface InsertCommit {
   _insert: string;
@@ -142,6 +143,9 @@ export interface LinksCommit {
 }
 export interface DescriptionsCommit {
   descriptions: string[];
+}
+export interface ImageCommit {
+  image: string;
 }
 export interface TitleCommit {
   title: string;
