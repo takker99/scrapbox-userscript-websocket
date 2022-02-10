@@ -21,10 +21,20 @@ const version = "4.2.0";
 
 export async function socketIO() {
   const io = await importSocketIO();
-  return io("https://scrapbox.io", {
+  const socket = io("https://scrapbox.io", {
     reconnectionDelay: 5000,
     transports: ["websocket"],
   });
+
+  await new Promise<void>((resolve, reject) => {
+    const onDisconnect = (reason: Socket.DisconnectReason) => reject(reason);
+    socket.once("connect", () => {
+      socket.off("disconnect", onDisconnect);
+      resolve();
+    });
+    socket.once("disconnect", onDisconnect);
+  });
+  return socket;
 }
 
 function importSocketIO(): Promise<Window["io"]> {
