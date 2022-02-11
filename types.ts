@@ -145,7 +145,7 @@ export interface DescriptionsCommit {
   descriptions: string[];
 }
 export interface ImageCommit {
-  image: string;
+  image: string | null;
 }
 export interface TitleCommit {
   title: string;
