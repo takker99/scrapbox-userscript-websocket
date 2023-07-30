@@ -23,7 +23,7 @@ export interface ProjectUpdatesStreamCommit {
   projectId: string;
   pageId: string;
   userId: string;
-  changes: (Change[] | [Delete]);
+  changes: Change[] | [Delete];
   cursor: null;
   freeze: true;
 }
@@ -55,7 +55,7 @@ export interface CommitNotification {
   projectId: string;
   pageId: string;
   userId: string;
-  changes: (Change[] | [Pin] | [Delete]);
+  changes: Change[] | [Pin] | [Delete];
   cursor: null;
   freeze: true;
 }
@@ -118,6 +118,7 @@ export type Change =
   | UpdateCommit
   | DeleteCommit
   | LinksCommit
+  | ProjectLinksCommit
   | DescriptionsCommit
   | ImageCommit
   | TitleCommit;
@@ -141,11 +142,14 @@ export interface DeleteCommit {
 export interface LinksCommit {
   links: string[];
 }
+export interface ProjectLinksCommit {
+  projectLinks: string[];
+}
 export interface DescriptionsCommit {
   descriptions: string[];
 }
 export interface ImageCommit {
-  image: string;
+  image: string | null;
 }
 export interface TitleCommit {
   title: string;
