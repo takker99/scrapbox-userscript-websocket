@@ -9,17 +9,22 @@ import type {
 } from "./types/socketIO/index.ts";
 export type { Manager, ManagerOptions, Socket, SocketOptions };
 
+type IO = (
+  uri: string,
+  opts?: Partial<ManagerOptions & SocketOptions>,
+) => Socket;
+
 declare global {
   interface Window {
-    io(
-      uri: string,
-      opts?: Partial<ManagerOptions & SocketOptions>,
-    ): Socket;
+    io?: IO;
   }
 }
 const version = "4.2.0";
+const url =
+  `https://cdnjs.cloudflare.com/ajax/libs/socket.io/${version}/socket.io.min.js`;
+let error: string | Event | undefined;
 
-export async function socketIO() {
+export async function socketIO(): Promise<Socket> {
   const io = await importSocketIO();
   const socket = io("https://scrapbox.io", {
     reconnectionDelay: 5000,
@@ -37,18 +42,25 @@ export async function socketIO() {
   return socket;
 }
 
-function importSocketIO(): Promise<Window["io"]> {
-  const url =
-    `https://cdnjs.cloudflare.com/ajax/libs/socket.io/${version}/socket.io.min.js`;
-  if (document.querySelector(`script[src="${url}"]`)) {
-    return Promise.resolve(window.io);
+async function importSocketIO(): Promise<IO> {
+  if (!document.querySelector(`script[src="${url}"]`)) {
+    const script = document.createElement("script");
+    script.src = url;
+    await new Promise<void>((resolve, reject) => {
+      script.onload = () => resolve();
+      script.onerror = (e) => {
+        error = e;
+        reject(e);
+      };
+      document.head.append(script);
+    });
   }
 
-  const script = document.createElement("script");
-  script.src = url;
   return new Promise((resolve, reject) => {
-    script.onload = () => resolve(window.io);
-    script.onerror = (e) => reject(e);
-    document.head.append(script);
+    const id = setInterval(() => {
+      if (!window.io) return;
+      clearInterval(id);
+      resolve(window.io);
+    }, 500);
   });
 }
