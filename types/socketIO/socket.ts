@@ -1,4 +1,4 @@
-// deno-lint-ignore-file no-explicit-any ban-types camelcase
+// deno-lint-ignore-file no-explicit-any camelcase
 // this file is copied from https://cdn.esm.sh/v54/socket.io-client@4.2.0/build/socket.d.ts
 import { Packet } from "./parser.ts";
 import { Manager } from "./manager.ts";
