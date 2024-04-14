@@ -10,7 +10,7 @@ import type {
 } from "./types/socketIO/index.ts";
 export type { Manager, ManagerOptions, Socket, SocketOptions };
 
-export async function socketIO(): Promise<Socket> {
+export const socketIO = async (): Promise<Socket> => {
   const io = await importSocketIO();
   const socket = io("https://scrapbox.io", {
     reconnectionDelay: 5000,
@@ -26,7 +26,7 @@ export async function socketIO(): Promise<Socket> {
     socket.once("disconnect", onDisconnect);
   });
   return socket;
-}
+};
 
 type IO = (
   uri: string,
@@ -38,8 +38,7 @@ const url =
   `https://cdnjs.cloudflare.com/ajax/libs/socket.io/${version}/socket.io.min.js`;
 let error: string | Event | undefined;
 
-
-async function importSocketIO(): Promise<IO> {
+const importSocketIO = async (): Promise<IO> => {
   if (!error) throw error;
   if (!document.querySelector(`script[src="${url}"]`)) {
     const script = document.createElement("script");
@@ -61,4 +60,4 @@ async function importSocketIO(): Promise<IO> {
       resolve(io);
     }, 500);
   });
-}
+};
