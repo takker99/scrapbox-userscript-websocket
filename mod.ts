@@ -7,17 +7,30 @@ import type { DataOf, EventMap, ListenEventMap, ResponseOf } from "./types.ts";
 export * from "./types.ts";
 export * from "./socket.ts";
 
-export function wrap(
+export interface SocketOperator {
+  request: <EventName extends keyof EventMap>(
+    event: EventName,
+    data: DataOf<EventName>,
+  ) => Promise<
+    EventName extends "cursor" ? void
+      : ResponseOf<"socket.io-request">["data"]
+  >;
+  response: <EventName extends keyof ListenEventMap>(
+    ...events: EventName[]
+  ) => AsyncGenerator<Parameters<ListenEventMap[EventName]>[0], void, unknown>;
+}
+
+export const wrap = (
   socket: Socket,
   timeout = 90000,
-) {
-  function request<EventName extends keyof EventMap>(
+): SocketOperator => {
+  const request = <EventName extends keyof EventMap>(
     event: EventName,
     data: DataOf<EventName>,
   ): Promise<
     EventName extends "cursor" ? void
       : ResponseOf<"socket.io-request">["data"]
-  > {
+  > => {
     let id: number | undefined;
     type ResolveType = EventName extends "cursor" ? void
       : ResponseOf<"socket.io-request">["data"];
@@ -46,7 +59,7 @@ export function wrap(
       }, timeout);
       socket.once("disconnect", onDisconnect);
     });
-  }
+  };
 
   async function* response<EventName extends keyof ListenEventMap>(
     ...events: EventName[]
@@ -77,4 +90,4 @@ export function wrap(
   }
 
   return { request, response };
-}
+};

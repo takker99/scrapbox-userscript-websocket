@@ -1,6 +1,7 @@
 /// <reference no-default-lib="true" />
 /// <reference lib="esnext" />
 /// <reference lib="dom" />
+
 import type {
   Manager,
   ManagerOptions,
@@ -9,22 +10,7 @@ import type {
 } from "./types/socketIO/index.ts";
 export type { Manager, ManagerOptions, Socket, SocketOptions };
 
-type IO = (
-  uri: string,
-  opts?: Partial<ManagerOptions & SocketOptions>,
-) => Socket;
-
-declare global {
-  interface Window {
-    io?: IO;
-  }
-}
-const version = "4.2.0";
-const url =
-  `https://cdnjs.cloudflare.com/ajax/libs/socket.io/${version}/socket.io.min.js`;
-let error: string | Event | undefined;
-
-export async function socketIO(): Promise<Socket> {
+export const socketIO = async (): Promise<Socket> => {
   const io = await importSocketIO();
   const socket = io("https://scrapbox.io", {
     reconnectionDelay: 5000,
@@ -40,9 +26,20 @@ export async function socketIO(): Promise<Socket> {
     socket.once("disconnect", onDisconnect);
   });
   return socket;
-}
+};
 
-async function importSocketIO(): Promise<IO> {
+type IO = (
+  uri: string,
+  opts?: Partial<ManagerOptions & SocketOptions>,
+) => Socket;
+declare const io: IO | undefined;
+const version = "4.2.0";
+const url =
+  `https://cdnjs.cloudflare.com/ajax/libs/socket.io/${version}/socket.io.min.js`;
+let error: string | Event | undefined;
+
+const importSocketIO = async (): Promise<IO> => {
+  if (!error) throw error;
   if (!document.querySelector(`script[src="${url}"]`)) {
     const script = document.createElement("script");
     script.src = url;
@@ -56,11 +53,11 @@ async function importSocketIO(): Promise<IO> {
     });
   }
 
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const id = setInterval(() => {
-      if (!window.io) return;
+      if (!io) return;
       clearInterval(id);
-      resolve(window.io);
+      resolve(io);
     }, 500);
   });
-}
+};
