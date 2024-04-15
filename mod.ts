@@ -3,7 +3,17 @@
 /// <reference lib="dom" />
 
 import type { Socket } from "./socket.ts";
-import type { DataOf, EventMap, ListenEventMap, ResponseOf } from "./types.ts";
+import {
+  DataOf,
+  EventMap,
+  FailedResOf,
+  isPageCommitError,
+  ListenEventMap,
+  Result,
+  SuccessResOf,
+  TimeoutError,
+  UnexpectedError,
+} from "./types.ts";
 export * from "./types.ts";
 export * from "./socket.ts";
 
@@ -12,12 +22,14 @@ export interface SocketOperator {
     event: EventName,
     data: DataOf<EventName>,
   ) => Promise<
-    EventName extends "cursor" ? void
-      : ResponseOf<"socket.io-request">["data"]
+    Result<
+      SuccessResOf<EventName>,
+      FailedResOf<EventName> | UnexpectedError | TimeoutError
+    >
   >;
   response: <EventName extends keyof ListenEventMap>(
     ...events: EventName[]
-  ) => AsyncGenerator<Parameters<ListenEventMap[EventName]>[0], void, unknown>;
+  ) => AsyncGenerator<ListenEventMap[EventName], void, unknown>;
 }
 
 export const wrap = (
@@ -28,34 +40,70 @@ export const wrap = (
     event: EventName,
     data: DataOf<EventName>,
   ): Promise<
-    EventName extends "cursor" ? void
-      : ResponseOf<"socket.io-request">["data"]
+    Result<
+      SuccessResOf<EventName>,
+      FailedResOf<EventName> | UnexpectedError | TimeoutError
+    >
   > => {
     let id: number | undefined;
-    type ResolveType = EventName extends "cursor" ? void
-      : ResponseOf<"socket.io-request">["data"];
     return new Promise((resolve, reject) => {
       const onDisconnect = (message: string) => {
         clearTimeout(id);
         reject(new Error(message));
       };
-      socket.emit(event, data, (response: ResponseOf<EventName>) => {
-        clearTimeout(id);
-        socket.off("disconnect", onDisconnect);
-        if (response.error) {
+      socket.emit(
+        event,
+        data,
+        (response: { data: SuccessResOf<EventName> } | { error: unknown }) => {
+          clearTimeout(id);
+          socket.off("disconnect", onDisconnect);
+          switch (event) {
+            case "socket.io-request":
+              if ("error" in response) {
+                if (
+                  typeof response.error === "object" && response.error &&
+                  "name" in response.error &&
+                  typeof response.error.name === "string" &&
+                  isPageCommitError({ name: response.error.name })
+                ) {
+                  resolve({ ok: false, value: response.error });
+                } else {
+                  resolve({
+                    ok: false,
+                    value: { name: "UnexpectedError", value: response.error },
+                  });
+                }
+              } else if ("data" in response) {
+                resolve({ ok: true, value: response.data });
+              }
+              break;
+            case "cursor":
+              if ("error" in response) {
+                resolve({
+                  ok: false,
+                  value: { name: "UnexpectedError", value: response.error },
+                });
+              } else if ("data" in response) {
+                resolve({ ok: true, value: response.data });
+              }
+              break;
+          }
           reject(
-            new Error(JSON.stringify(response.error)),
+            new Error(
+              'Invalid response: missing "data" or "error" field',
+            ),
           );
-        }
-        if ("data" in response) {
-          resolve(response?.data as ResolveType);
-        } else {
-          resolve(undefined as ResolveType);
-        }
-      });
+        },
+      );
       id = setTimeout(() => {
         socket.off("disconnect", onDisconnect);
-        reject(new Error(`Timeout: exceeded ${timeout}ms`));
+        resolve({
+          ok: false,
+          value: {
+            name: "TimeoutError",
+            message: `Timeout: exceeded ${timeout}ms`,
+          },
+        });
       }, timeout);
       socket.once("disconnect", onDisconnect);
     });
@@ -64,7 +112,7 @@ export const wrap = (
   async function* response<EventName extends keyof ListenEventMap>(
     ...events: EventName[]
   ) {
-    type Data = Parameters<ListenEventMap[EventName]>[0];
+    type Data = ListenEventMap[EventName];
     let _resolve: ((data: Data) => void) | undefined;
     const waitForEvent = () => new Promise<Data>((res) => _resolve = res);
     const resolve = (data: Data) => {
