@@ -243,7 +243,7 @@ export interface UpdateChange {
   lines: {
     text: string;
   };
-  noTimestampUpdate: unknown;
+  noTimestampUpdate?: unknown;
 }
 export interface DeleteChange {
   _delete: string;
