@@ -39,7 +39,7 @@ const url =
 let error: string | Event | undefined;
 
 const importSocketIO = async (): Promise<IO> => {
-  if (!error) throw error;
+  if (error) throw error;
   if (!document.querySelector(`script[src="${url}"]`)) {
     const script = document.createElement("script");
     script.src = url;
