@@ -225,6 +225,7 @@ export type Change =
   | DeleteChange
   | LinksChange
   | ProjectLinksChange
+  | IconsChange
   | DescriptionsChange
   | ImageChange
   | FilesChange
