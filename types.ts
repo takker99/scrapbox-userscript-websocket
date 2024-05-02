@@ -268,13 +268,16 @@ export interface TitleChange {
   title: string;
 }
 export interface FilesChange {
-  files: unknown[];
+  /** file id */
+  files: string[];
 }
 export interface HelpFeelsChange {
-  helpfeels: unknown[];
+  /** Helpfeel記法の先頭の`? `をとったもの */
+  helpfeels: string[];
 }
 export interface infoboxDefinitionChange {
-  infoboxDefinition: unknown[];
+  /** `table:infobox`または`table:cosense`の各行をtrimしたもの */
+  infoboxDefinition: string[];
 }
 export interface PinChange {
   pin: number;
